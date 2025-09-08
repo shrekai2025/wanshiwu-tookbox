@@ -72,6 +72,11 @@ export function NFTComposer() {
     setState(prev => ({ ...prev, currentStep: step }));
   }, []);
 
+  // 处理Tabs组件的onValueChange，它传递string类型
+  const handleStepChange = useCallback((value: string) => {
+    setCurrentStep(value as NFTWorkflowStep);
+  }, [setCurrentStep]);
+
   // 更新导出设置
   const updateExportSettings = useCallback((settings: ExportSettings) => {
     setState(prev => ({
@@ -126,7 +131,7 @@ export function NFTComposer() {
         {/* 工作流步骤导航 */}
         <Card className="rounded-none border-0 border-b">
           <CardContent className="pt-6">
-            <Tabs value={state.currentStep} onValueChange={setCurrentStep}>
+            <Tabs value={state.currentStep} onValueChange={handleStepChange}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="setup" className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
