@@ -14,12 +14,13 @@ import {
   FileType,
   Brush,
   CalendarDays,
-  Zap
+  Zap,
+  StickyNote
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 
-export type TabType = "pdf" | "picturebook" | "nft" | "pdfcrop" | "text2pdf" | "pdf2image" | "schedule";
+export type TabType = "pdf" | "picturebook" | "nft" | "pdfcrop" | "text2pdf" | "pdf2image" | "schedule" | "tasknotes";
 
 interface TabNavigationProps {
   // 这些props现在是可选的，因为我们从URL中获取状态
@@ -37,7 +38,7 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
     if (activeTab) return activeTab; // 向后兼容旧的props方式
     
     const path = pathname.split('/').pop();
-    const validTabs: TabType[] = ["pdf", "picturebook", "nft", "pdfcrop", "text2pdf", "pdf2image", "schedule"];
+    const validTabs: TabType[] = ["pdf", "picturebook", "nft", "pdfcrop", "text2pdf", "pdf2image", "schedule", "tasknotes"];
     return validTabs.includes(path as TabType) ? (path as TabType) : "pdf";
   };
 
@@ -115,15 +116,22 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
       ]
     },
     {
-      groupName: "计划任务表",
+      groupName: "任务看板",
       groupIcon: CalendarDays,
       tabs: [
         { 
           id: "schedule" as const, 
-          label: "计划表制作", 
+          label: "满分课程表", 
           icon: Calendar,
           description: "创建和管理日程安排，支持任务分组和打印导出",
           path: "/schedule"
+        },
+        { 
+          id: "tasknotes" as const, 
+          label: "任务便签", 
+          icon: StickyNote,
+          description: "创建和管理可拖拽的任务便签，支持多种内容类型",
+          path: "/tasknotes"
         },
       ]
     }
@@ -164,7 +172,7 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   const currentGroup = getCurrentGroup();
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+    <header className="sticky top-0 z-[100] bg-white/95 backdrop-blur-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto">
         {/* 主导航栏 */}
         <div className="flex items-center justify-between h-16 px-6">
@@ -205,15 +213,12 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
                   </button>
                   
                   {/* 下拉菜单 */}
-                  <div className={`absolute top-full right-0 mt-2 w-56 bg-white rounded-xl border border-gray-200 shadow-lg transition-all duration-200 ${
+                  <div className={`absolute top-full right-0 mt-2 w-56 bg-white rounded-xl border border-gray-200 shadow-lg transition-all duration-200 z-[110] ${
                     isDropdownOpen 
                       ? 'opacity-100 visible translate-y-0' 
                       : 'opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0'
                   }`}>
                     <div className="p-2">
-                      <div className="text-xs font-medium text-gray-500 px-3 py-2 border-b border-gray-100 mb-1">
-                        {group.groupName}
-                      </div>
                       {group.tabs.map((tab) => {
                         const TabIcon = tab.icon;
                         const isActive = currentTab === tab.id;

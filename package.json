@@ -3,7 +3,14 @@
   "version": "2.0.0",
   "private": true,
   "description": "万事屋 - 现代化的多功能文档处理和创作工具集",
-  "keywords": ["pdf", "document", "toolkit", "nextjs", "typescript", "web-app"],
+  "keywords": [
+    "pdf",
+    "document",
+    "toolkit",
+    "nextjs",
+    "typescript",
+    "web-app"
+  ],
   "author": "Your Name",
   "license": "MIT",
   "repository": {
@@ -63,7 +70,10 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.4.54",
     "react": "^18.2.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
     "tailwind-merge": "^2.0.0",
     "tailwindcss-animate": "^1.0.7"
   },
