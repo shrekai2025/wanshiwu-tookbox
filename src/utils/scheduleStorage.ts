@@ -121,6 +121,7 @@ export function importData(file: File): Promise<CalendarData> {
         const parsedData: CalendarData = {
           year: data.year || new Date().getFullYear(),
           month: data.month || new Date().getMonth() + 1,
+          customTitle: data.customTitle, // 保留自定义标题
           tasks: data.tasks.map((task: any) => ({
             ...task,
             createdAt: new Date(task.createdAt || Date.now()),
@@ -161,6 +162,7 @@ export function mergeImportedData(currentData: CalendarData, importedData: Calen
   return {
     year: currentData.year,
     month: currentData.month,
+    customTitle: currentData.customTitle, // 保留当前的自定义标题
     tasks: allTasks,
     taskGroups: allTaskGroups,
   };
