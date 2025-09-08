@@ -113,29 +113,33 @@ export function TaskList({
               })}
 
               {/* 优先级 */}
-              <div className="flex items-center gap-1">
-                <Flag
-                  className="h-3 w-3"
-                  style={{ color: PRIORITY_CONFIG[task.priority].color }}
-                />
-                <span className="text-muted-foreground">
-                  {PRIORITY_CONFIG[task.priority].label}
-                </span>
-              </div>
+              {task.priority && PRIORITY_CONFIG[task.priority] && (
+                <div className="flex items-center gap-1">
+                  <Flag
+                    className="h-3 w-3"
+                    style={{ color: PRIORITY_CONFIG[task.priority].color }}
+                  />
+                  <span className="text-muted-foreground">
+                    {PRIORITY_CONFIG[task.priority].label}
+                  </span>
+                </div>
+              )}
 
               {/* 完成状态 */}
-              <div className="flex items-center gap-1">
-                <CheckCircle
-                  className="h-3 w-3"
-                  style={{ color: COMPLETION_STATUS_CONFIG[task.completionStatus].color }}
-                />
-                <span className="text-muted-foreground">
-                  {COMPLETION_STATUS_CONFIG[task.completionStatus].label}
-                </span>
-              </div>
+              {task.completionStatus && COMPLETION_STATUS_CONFIG[task.completionStatus] && (
+                <div className="flex items-center gap-1">
+                  <CheckCircle
+                    className="h-3 w-3"
+                    style={{ color: COMPLETION_STATUS_CONFIG[task.completionStatus].color }}
+                  />
+                  <span className="text-muted-foreground">
+                    {COMPLETION_STATUS_CONFIG[task.completionStatus].label}
+                  </span>
+                </div>
+              )}
 
               {/* 验收状态 */}
-              {task.reviewStatus && (
+              {task.reviewStatus && REVIEW_STATUS_CONFIG[task.reviewStatus] && (
                 <div className="flex items-center gap-1">
                   <Star
                     className="h-3 w-3"

@@ -218,17 +218,21 @@ function PrintTaskList({
             })}
             
             {/* 优先级 */}
-            <span style={{ color: PRIORITY_CONFIG[task.priority].color }}>
-              {PRIORITY_CONFIG[task.priority].label}
-            </span>
+            {task.priority && PRIORITY_CONFIG[task.priority] && (
+              <span style={{ color: PRIORITY_CONFIG[task.priority].color }}>
+                {PRIORITY_CONFIG[task.priority].label}
+              </span>
+            )}
             
             {/* 完成状态 */}
-            <span style={{ color: COMPLETION_STATUS_CONFIG[task.completionStatus].color }}>
-              {COMPLETION_STATUS_CONFIG[task.completionStatus].label}
-            </span>
+            {task.completionStatus && COMPLETION_STATUS_CONFIG[task.completionStatus] && (
+              <span style={{ color: COMPLETION_STATUS_CONFIG[task.completionStatus].color }}>
+                {COMPLETION_STATUS_CONFIG[task.completionStatus].label}
+              </span>
+            )}
             
             {/* 验收状态 */}
-            {task.reviewStatus && (
+            {task.reviewStatus && REVIEW_STATUS_CONFIG[task.reviewStatus] && (
               <span style={{ color: REVIEW_STATUS_CONFIG[task.reviewStatus].color }}>
                 {REVIEW_STATUS_CONFIG[task.reviewStatus].label}
               </span>
