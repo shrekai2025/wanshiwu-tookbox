@@ -1,0 +1,300 @@
+#!/bin/bash
+
+# 万事屋 - Ubuntu 服务器快速部署脚本
+# 支持 Ubuntu 24.04.2 LTS
+
+set -e
+
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# 打印带颜色的消息
+print_message() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_step() {
+    echo -e "${BLUE}[STEP]${NC} $1"
+}
+
+# 检查是否为root用户
+check_root() {
+    if [[ $EUID -eq 0 ]]; then
+        print_error "请不要使用root用户运行此脚本"
+        exit 1
+    fi
+}
+
+# 检查Ubuntu版本
+check_ubuntu() {
+    if ! grep -q "Ubuntu" /etc/os-release; then
+        print_error "此脚本仅支持Ubuntu系统"
+        exit 1
+    fi
+    
+    VERSION=$(grep VERSION_ID /etc/os-release | cut -d'"' -f2)
+    print_message "检测到Ubuntu版本: $VERSION"
+}
+
+# 更新系统
+update_system() {
+    print_step "更新系统包..."
+    sudo apt update && sudo apt upgrade -y
+}
+
+# 安装Node.js 18+
+install_nodejs() {
+    print_step "安装Node.js 18..."
+    
+    # 检查是否已安装Node.js
+    if command -v node > /dev/null 2>&1; then
+        NODE_VERSION=$(node --version)
+        print_message "Node.js已安装: $NODE_VERSION"
+        
+        # 检查版本是否 >= 18
+        MAJOR_VERSION=$(echo $NODE_VERSION | cut -d'.' -f1 | sed 's/v//')
+        if [ "$MAJOR_VERSION" -ge 18 ]; then
+            print_message "Node.js版本满足要求"
+            return
+        else
+            print_warning "Node.js版本过低，需要升级到18+"
+        fi
+    fi
+    
+    # 安装Node.js 18
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+    
+    print_message "Node.js安装完成: $(node --version)"
+    print_message "npm版本: $(npm --version)"
+}
+
+# 安装Nginx
+install_nginx() {
+    print_step "安装Nginx..."
+    
+    if command -v nginx > /dev/null 2>&1; then
+        print_message "Nginx已安装"
+        return
+    fi
+    
+    sudo apt install -y nginx
+    sudo systemctl enable nginx
+    sudo systemctl start nginx
+    
+    print_message "Nginx安装并启动完成"
+}
+
+# 安装PM2
+install_pm2() {
+    print_step "安装PM2进程管理器..."
+    
+    if command -v pm2 > /dev/null 2>&1; then
+        print_message "PM2已安装"
+        return
+    fi
+    
+    sudo npm install -g pm2
+    print_message "PM2安装完成"
+}
+
+# 构建项目
+build_project() {
+    print_step "构建项目..."
+    
+    # 检查package.json是否存在
+    if [ ! -f "package.json" ]; then
+        print_error "未找到package.json文件，请确保在项目根目录运行此脚本"
+        exit 1
+    fi
+    
+    # 安装依赖
+    print_message "安装项目依赖..."
+    npm ci
+    
+    # 构建项目
+    print_message "构建生产版本..."
+    npm run build
+    
+    print_message "项目构建完成"
+}
+
+# 配置PM2
+configure_pm2() {
+    print_step "配置PM2..."
+    
+    # 创建PM2配置文件
+    cat > ecosystem.config.js << EOF
+module.exports = {
+  apps: [{
+    name: 'professional-toolkit',
+    script: 'npm',
+    args: 'start',
+    cwd: '$(pwd)',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3000
+    },
+    instances: 1,
+    exec_mode: 'fork',
+    watch: false,
+    max_memory_restart: '1G',
+    error_file: './logs/err.log',
+    out_file: './logs/out.log',
+    log_file: './logs/combined.log',
+    time: true
+  }]
+};
+EOF
+
+    # 创建日志目录
+    mkdir -p logs
+    
+    # 启动应用
+    pm2 start ecosystem.config.js
+    pm2 save
+    pm2 startup
+    
+    print_message "PM2配置完成，应用已启动"
+}
+
+# 配置Nginx
+configure_nginx() {
+    print_step "配置Nginx..."
+    
+    # 读取域名
+    read -p "请输入您的域名（如：example.com，或直接回车使用localhost）: " DOMAIN
+    DOMAIN=${DOMAIN:-localhost}
+    
+    # 创建Nginx配置
+    sudo tee /etc/nginx/sites-available/professional-toolkit > /dev/null << EOF
+server {
+    listen 80;
+    server_name $DOMAIN;
+    
+    # Gzip压缩
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+    
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        
+        # 客户端最大请求体大小
+        client_max_body_size 100M;
+    }
+    
+    # 静态文件缓存
+    location /_next/static/ {
+        proxy_pass http://localhost:3000;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+    
+    # 图标缓存
+    location ~* \.(ico|png|jpg|jpeg|gif|svg)$ {
+        proxy_pass http://localhost:3000;
+        add_header Cache-Control "public, max-age=86400";
+    }
+}
+EOF
+
+    # 启用站点
+    sudo ln -sf /etc/nginx/sites-available/professional-toolkit /etc/nginx/sites-enabled/
+    
+    # 删除默认站点（如果存在）
+    sudo rm -f /etc/nginx/sites-enabled/default
+    
+    # 测试Nginx配置
+    sudo nginx -t
+    
+    # 重载Nginx
+    sudo systemctl reload nginx
+    
+    print_message "Nginx配置完成"
+}
+
+# 配置防火墙
+configure_firewall() {
+    print_step "配置防火墙..."
+    
+    # 检查ufw是否安装
+    if command -v ufw > /dev/null 2>&1; then
+        sudo ufw allow 22      # SSH
+        sudo ufw allow 80      # HTTP
+        sudo ufw allow 443     # HTTPS (为将来准备)
+        sudo ufw --force enable
+        print_message "防火墙配置完成"
+    else
+        print_warning "未检测到ufw，请手动配置防火墙开放80和443端口"
+    fi
+}
+
+# 显示部署信息
+show_deployment_info() {
+    print_step "部署完成！"
+    echo
+    print_message "应用信息："
+    echo "  • 应用名称: 万事屋 - Professional Toolkit"
+    echo "  • 运行端口: 3000 (内部)"
+    echo "  • 外部访问: http://$DOMAIN"
+    echo "  • 进程管理: PM2"
+    echo "  • 反向代理: Nginx"
+    echo
+    print_message "管理命令："
+    echo "  • 查看应用状态: pm2 status"
+    echo "  • 查看应用日志: pm2 logs professional-toolkit"
+    echo "  • 重启应用: pm2 restart professional-toolkit"
+    echo "  • 停止应用: pm2 stop professional-toolkit"
+    echo "  • 重启Nginx: sudo systemctl restart nginx"
+    echo
+    print_message "日志文件位置："
+    echo "  • 应用日志: $(pwd)/logs/"
+    echo "  • Nginx日志: /var/log/nginx/"
+    echo
+    print_message "如需配置HTTPS，请使用Certbot安装SSL证书"
+}
+
+# 主函数
+main() {
+    print_message "🚀 开始部署万事屋到Ubuntu服务器..."
+    echo
+    
+    check_root
+    check_ubuntu
+    update_system
+    install_nodejs
+    install_nginx
+    install_pm2
+    build_project
+    configure_pm2
+    configure_nginx
+    configure_firewall
+    show_deployment_info
+    
+    echo
+    print_message "🎉 部署完成！享受您的万事屋吧！"
+}
+
+# 执行主函数
+main "$@"
