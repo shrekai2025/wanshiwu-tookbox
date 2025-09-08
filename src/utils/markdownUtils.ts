@@ -8,8 +8,6 @@ const IMAGE_SYNTAX_REGEX = /\{\{image:([^}]+)\}\}/g;
 marked.setOptions({
   gfm: true,          // GitHub Flavored Markdown
   breaks: true,       // 换行符转换为<br>
-  pedantic: false,    // 不严格遵循原始markdown规范
-  sanitize: false,    // 不在marked中sanitize，我们用DOMPurify
 });
 
 /**

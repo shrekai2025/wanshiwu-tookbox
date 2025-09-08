@@ -52,7 +52,8 @@ export async function parsePDF(file: File): Promise<PDFDocument> {
         // 渲染页面到canvas
         await page.render({
           canvasContext: context,
-          viewport: viewport
+          viewport: viewport,
+          canvas: canvas
         }).promise;
 
         const pdfPage: PDFPage = {

@@ -381,7 +381,6 @@ function PDF2ImageComposer() {
                             }
                           }}
                           className="h-full w-full object-contain"
-                          alt={`PDF第${page.pageNumber}页预览`}
                         />
                       </div>
                     </div>

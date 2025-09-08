@@ -115,7 +115,7 @@ function PDFCropper() {
       );
 
       // 创建下载链接
-      const blob = new Blob([processedPdfBytes], { type: "application/pdf" });
+      const blob = new Blob([processedPdfBytes as BlobPart], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

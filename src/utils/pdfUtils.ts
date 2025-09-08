@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { ImageFile, PDFSettings } from "@/app/page";
+import { ImageFile, PDFSettings } from "@/components/PDFComposer";
 
 export async function generatePDF(images: ImageFile[], settings: PDFSettings): Promise<void> {
   // 如果没有图片，直接返回
