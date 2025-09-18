@@ -285,7 +285,7 @@ export function ScheduleComposer() {
     return (
       <div className="print-mode">
         {/* 打印模式工具栏 */}
-        <div className="fixed top-4 right-4 no-print flex gap-2 z-50 bg-white p-2 rounded-lg shadow-lg border">
+        <div className="fixed bottom-4 left-4 no-print flex gap-2 z-50 bg-white p-2 rounded-lg shadow-lg border">
           <Button onClick={handleSaveAsImage} size="sm">
             <Download className="h-4 w-4 mr-1" />
             保存图片

@@ -15,12 +15,15 @@ import {
   Brush,
   CalendarDays,
   Zap,
-  StickyNote
+  StickyNote,
+  Download,
+  Globe,
+  Camera
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 
-export type TabType = "pdf" | "picturebook" | "nft" | "pdfcrop" | "text2pdf" | "pdf2image" | "schedule" | "tasknotes";
+export type TabType = "pdf" | "picturebook" | "nft" | "pdfcrop" | "text2pdf" | "pdf2image" | "schedule" | "tasknotes" | "localextractor" | "screenshot-extractor";
 
 interface TabNavigationProps {
   // 这些props现在是可选的，因为我们从URL中获取状态
@@ -38,7 +41,7 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
     if (activeTab) return activeTab; // 向后兼容旧的props方式
     
     const path = pathname.split('/').pop();
-    const validTabs: TabType[] = ["pdf", "picturebook", "nft", "pdfcrop", "text2pdf", "pdf2image", "schedule", "tasknotes"];
+    const validTabs: TabType[] = ["pdf", "picturebook", "nft", "pdfcrop", "text2pdf", "pdf2image", "schedule", "tasknotes", "localextractor", "screenshot-extractor"];
     return validTabs.includes(path as TabType) ? (path as TabType) : "pdf";
   };
 
@@ -132,6 +135,26 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
           icon: StickyNote,
           description: "创建和管理可拖拽的任务便签，支持多种内容类型",
           path: "/tasknotes"
+        },
+      ]
+    },
+    {
+      groupName: "内容提取",
+      groupIcon: Download,
+      tabs: [
+        { 
+          id: "localextractor" as const, 
+          label: "本地提取", 
+          icon: Globe,
+          description: "从本地网页文件中提取正文和评论内容",
+          path: "/localextractor"
+        },
+        { 
+          id: "screenshot-extractor" as const, 
+          label: "截图文案提取", 
+          icon: Camera,
+          description: "使用AI识别图片中的文字并提供翻译",
+          path: "/screenshot-extractor"
         },
       ]
     }
