@@ -18,12 +18,14 @@ import {
   StickyNote,
   Download,
   Globe,
-  Camera
+  Camera,
+  Info,
+  Twitter
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 
-export type TabType = "pdf" | "picturebook" | "nft" | "pdfcrop" | "text2pdf" | "pdf2image" | "schedule" | "tasknotes" | "localextractor" | "screenshot-extractor";
+export type TabType = "pdf" | "picturebook" | "nft" | "pdfcrop" | "text2pdf" | "pdf2image" | "schedule" | "tasknotes" | "localextractor" | "screenshot-extractor" | "about";
 
 interface TabNavigationProps {
   // 这些props现在是可选的，因为我们从URL中获取状态
@@ -41,7 +43,7 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
     if (activeTab) return activeTab; // 向后兼容旧的props方式
     
     const path = pathname.split('/').pop();
-    const validTabs: TabType[] = ["pdf", "picturebook", "nft", "pdfcrop", "text2pdf", "pdf2image", "schedule", "tasknotes", "localextractor", "screenshot-extractor"];
+    const validTabs: TabType[] = ["pdf", "picturebook", "nft", "pdfcrop", "text2pdf", "pdf2image", "schedule", "tasknotes", "localextractor", "screenshot-extractor", "about"];
     return validTabs.includes(path as TabType) ? (path as TabType) : "pdf";
   };
 
@@ -93,8 +95,8 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
       ]
     },
     {
-      groupName: "书籍制作",
-      groupIcon: BookOpen,
+      groupName: "合成器",
+      groupIcon: Brush,
       tabs: [
         { 
           id: "picturebook" as const, 
@@ -103,12 +105,6 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
           description: "创建精美的绘本作品",
           path: "/picturebook"
         },
-      ]
-    },
-    {
-      groupName: "批量作图",
-      groupIcon: Brush,
-      tabs: [
         { 
           id: "nft" as const, 
           label: "NFT合成", 
@@ -171,11 +167,15 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
       onTabChange(tabId);
     } else {
       // 新的路由方式
-      // @ts-ignore
-      const tab = allTabs.find(t => t.id === tabId);
-      if (tab) {
+      if (tabId === "about") {
+        router.push("/about");
+      } else {
         // @ts-ignore
-        router.push(tab.path);
+        const tab = allTabs.find(t => t.id === tabId);
+        if (tab) {
+          // @ts-ignore
+          router.push(tab.path);
+        }
       }
     }
   };
@@ -268,6 +268,30 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
                 </div>
               );
             })}
+            
+            {/* About 独立按钮 */}
+            <button
+              onClick={() => handleTabChange("about")}
+              className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                currentTab === "about"
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <Info className="w-4 h-4" />
+              <span className="hidden md:inline-block">关于</span>
+            </button>
+            
+            {/* 推特链接 */}
+            <a
+              href="https://x.com/aiRickMomo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+              title="关注我们的推特"
+            >
+              <Twitter className="w-4 h-4" />
+            </a>
           </nav>
         </div>
         
