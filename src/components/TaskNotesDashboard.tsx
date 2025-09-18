@@ -8,8 +8,9 @@ import { Input } from './ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from './ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { Alert, AlertDescription } from './ui/alert';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Plus, Edit2, Check, X, MoreVertical, Trash2, Search, StickyNote, Download } from 'lucide-react';
+import { Plus, Edit2, Check, X, MoreVertical, Trash2, Search, StickyNote, Download, Upload } from 'lucide-react';
 import { TaskNoteCard } from './TaskNoteCard';
 import { EditTaskNoteModal } from './EditTaskNoteModal';
 import { TaskNote, Tab, DashboardConfig, StoredData, SearchResult } from '@/types/tasknotes';
@@ -52,8 +53,10 @@ function TaskNotesDashboardInner() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load data from localStorage
   useEffect(() => {
@@ -219,6 +222,125 @@ function TaskNotesDashboardInner() {
       console.error('Failed to save to localStorage:', error);
     }
   }, []);
+
+  // Import data functionality
+  const importData = useCallback((file: File): Promise<StoredData> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const content = e.target?.result as string;
+          const data = JSON.parse(content);
+          
+          // Validate data format
+          if (!data.config || !data.notes || !data.tabs) {
+            throw new Error('无效的数据格式：缺少必要字段');
+          }
+          
+          if (!Array.isArray(data.notes)) {
+            throw new Error('无效的数据格式：便签数据必须是数组');
+          }
+          
+          if (!Array.isArray(data.tabs)) {
+            throw new Error('无效的数据格式：标签数据必须是数组');
+          }
+          
+          // Transform dates back to Date objects
+          const parsedData: StoredData = {
+            config: {
+              title: data.config.title || '任务便签看板',
+              activeTabId: data.config.activeTabId || 'default'
+            },
+            notes: data.notes.map((note: any) => ({
+              ...note,
+              width: note.width || DEFAULT_NOTE_WIDTH,
+              isCollapsed: note.isCollapsed ?? false,
+              tabId: note.tabId || 'default',
+              createdAt: new Date(note.createdAt || Date.now()),
+              updatedAt: new Date(note.updatedAt || Date.now())
+            })),
+            tabs: data.tabs.map((tab: any) => ({
+              ...tab,
+              createdAt: new Date(tab.createdAt || Date.now())
+            })),
+            maxZIndex: data.maxZIndex || 1
+          };
+          
+          resolve(parsedData);
+        } catch (error) {
+          reject(new Error(`导入失败: ${error instanceof Error ? error.message : '未知错误'}`));
+        }
+      };
+      
+      reader.onerror = () => {
+        reject(new Error('文件读取失败'));
+      };
+      
+      reader.readAsText(file);
+    });
+  }, []);
+
+  // Handle import button click
+  const handleImportClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  // Handle file selection for import
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const importedData = await importData(file);
+      
+      // Merge imported data with current data
+      // Avoid duplicate notes by checking IDs
+      const existingNoteIds = new Set(notes.map(n => n.id));
+      const newNotes = importedData.notes.filter(note => !existingNoteIds.has(note.id));
+      const mergedNotes = [...notes, ...newNotes];
+      
+      // Add new tabs that don't exist
+      const mergedTabs = [...tabs];
+      const existingTabIds = new Set(tabs.map(t => t.id));
+      const newTabs = importedData.tabs.filter(tab => !existingTabIds.has(tab.id));
+      newTabs.forEach(tab => mergedTabs.push(tab));
+      
+      // Update max z-index
+      const newMaxZIndex = Math.max(maxZIndex, importedData.maxZIndex);
+      
+      // Update state
+      setNotes(mergedNotes);
+      setTabs(mergedTabs);
+      setMaxZIndex(newMaxZIndex);
+      
+      // Save to storage
+      saveToStorage(config, mergedNotes, mergedTabs, newMaxZIndex);
+      
+      setImportMessage({
+        type: 'success',
+        message: `数据导入成功！导入了 ${newNotes.length} 个便签和 ${newTabs.length} 个标签。${
+          importedData.notes.length > newNotes.length ? `（跳过了 ${importedData.notes.length - newNotes.length} 个重复便签）` : ''
+        }`
+      });
+      
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => setImportMessage(null), 5000);
+    } catch (error) {
+      setImportMessage({
+        type: 'error',
+        message: error instanceof Error ? error.message : '导入失败'
+      });
+      
+      // Auto-hide error message after 8 seconds
+      setTimeout(() => setImportMessage(null), 8000);
+    }
+
+    // Clear file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [notes, tabs, maxZIndex, config, importData, saveToStorage]);
 
   // Update config and save
   const updateConfig = useCallback((newConfig: DashboardConfig) => {
@@ -516,6 +638,33 @@ function TaskNotesDashboardInner() {
 
   return (
     <div className="h-screen w-full relative overflow-hidden bg-gray-50">
+      {/* Import feedback alert */}
+      {importMessage && (
+        <div className="fixed top-4 right-4 z-[60] w-80">
+          <Alert className={`${
+            importMessage.type === 'success' 
+              ? 'border-green-500 bg-green-50' 
+              : 'border-red-500 bg-red-50'
+          }`}>
+            <AlertDescription className={`${
+              importMessage.type === 'success' 
+                ? 'text-green-800' 
+                : 'text-red-800'
+            }`}>
+              {importMessage.message}
+            </AlertDescription>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setImportMessage(null)}
+              className="absolute top-1 right-1 h-6 w-6 p-0 hover:bg-transparent"
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </Alert>
+        </div>
+      )}
+
       {/* Header toolbar */}
       <div className="relative z-50 px-4 py-3 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
         <div className="flex justify-between items-center w-full">
@@ -580,6 +729,18 @@ function TaskNotesDashboardInner() {
             >
               <Download className="w-4 h-4" />
               导出
+            </Button>
+
+            {/* Import data button */}
+            <Button
+              onClick={handleImportClick}
+              size="sm"
+              variant="ghost"
+              className="gap-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-8 px-3 text-sm"
+              title="导入备份数据"
+            >
+              <Upload className="w-4 h-4" />
+              导入
             </Button>
 
             {/* Search bar */}
@@ -772,6 +933,15 @@ function TaskNotesDashboardInner() {
           allNotes={notes.filter(n => n.id !== editingNote.id)}
         />
       )}
+
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={handleFileChange}
+        className="hidden"
+      />
     </div>
   );
 }

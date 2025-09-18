@@ -20,7 +20,8 @@ import {
   Globe,
   Camera,
   Info,
-  Twitter
+  Twitter,
+  Github
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -291,6 +292,17 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
               title="关注我们的推特"
             >
               <Twitter className="w-4 h-4" />
+            </a>
+            
+            {/* GitHub链接 */}
+            <a
+              href="https://github.com/shrekai2025/wanshiwu-tookbox"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              title="查看GitHub源码"
+            >
+              <Github className="w-4 h-4" />
             </a>
           </nav>
         </div>
