@@ -50,7 +50,7 @@ export function ScreenshotExtractor() {
   });
 
   const [notification, setNotification] = useState<{
-    type: 'success' | 'error' | 'info';
+    type: 'success' | 'error' | 'info' | 'warning';
     message: string;
   } | null>(null);
 
@@ -95,7 +95,7 @@ export function ScreenshotExtractor() {
   }, []);
 
   // 显示通知
-  const showNotification = useCallback((type: 'success' | 'error' | 'info', message: string) => {
+  const showNotification = useCallback((type: 'success' | 'error' | 'info' | 'warning', message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 3000);
   }, []);
@@ -358,14 +358,17 @@ export function ScreenshotExtractor() {
           <Alert className={`w-80 ${
             notification.type === 'success' ? 'border-green-200 bg-green-50' :
             notification.type === 'error' ? 'border-red-200 bg-red-50' :
+            notification.type === 'warning' ? 'border-orange-200 bg-orange-50' :
             'border-blue-200 bg-blue-50'
           }`}>
             {notification.type === 'success' && <CheckCircle className="h-4 w-4 text-green-600" />}
             {notification.type === 'error' && <AlertCircle className="h-4 w-4 text-red-600" />}
+            {notification.type === 'warning' && <AlertCircle className="h-4 w-4 text-orange-600" />}
             {notification.type === 'info' && <Info className="h-4 w-4 text-blue-600" />}
             <AlertDescription className={
               notification.type === 'success' ? 'text-green-800' :
               notification.type === 'error' ? 'text-red-800' :
+              notification.type === 'warning' ? 'text-orange-800' :
               'text-blue-800'
             }>
               {notification.message}
@@ -751,19 +754,17 @@ export function ScreenshotExtractor() {
                           </p>
                         </div>
                         <div className="flex gap-1 ml-2">
-                          {(result.imageDataUrls || [result.imageDataUrl]).slice(0, 3).map((url, index) => (
-                            url && (
-                              <img
-                                key={index}
-                                src={url}
-                                alt=""
-                                className="w-8 h-8 rounded object-cover"
-                              />
-                            )
+                          {(result.imageDataUrls || [(result as any).imageDataUrl]).filter(url => url).slice(0, 3).map((url, index) => (
+                            <img
+                              key={index}
+                              src={url}
+                              alt=""
+                              className="w-8 h-8 rounded object-cover"
+                            />
                           ))}
-                          {(result.imageDataUrls?.length || 0) > 3 && (
+                          {(result.imageDataUrls?.length || ((result as any).imageDataUrl ? 1 : 0)) > 3 && (
                             <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center text-xs text-gray-600">
-                              +{(result.imageDataUrls?.length || 0) - 3}
+                              +{(result.imageDataUrls?.length || ((result as any).imageDataUrl ? 1 : 0)) - 3}
                             </div>
                           )}
                         </div>

@@ -286,7 +286,7 @@ export async function scanDirectoryForHTMLFiles(
     if (htmlFiles.length >= maxFiles) return;
 
     try {
-      for await (const [name, handle] of dirHandle.entries()) {
+      for await (const [name, handle] of (dirHandle as any).entries()) {
         if (htmlFiles.length >= maxFiles) break;
 
         if (handle.kind === 'file' && name.toLowerCase().endsWith('.html')) {
